@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sazón — Panel del Restaurante</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="side">
+    <div class="brand">
+      <div class="mark">🍽️</div>
+      <div>
+        <h1>Sazón</h1>
+        <small>Panel del Restaurante</small>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <button data-page="crud"   class="active"><span class="ic">🍲</span> Carta (CRUD)        <span class="step">0–6</span></button>
+      <button data-page="venta"><span class="ic">🧾</span> Registrar venta      <span class="step">0–6</span></button>
+      <button data-page="reporte"><span class="ic">📊</span> Reportes            <span class="step">6–9</span></button>
+      <button data-page="nosql"><span class="ic">🧬</span> Módulo NoSQL          <span class="step">9–12</span></button>
+      <button data-page="opt"><span class="ic">⚡</span> Optimización            <span class="step">—</span></button>
+    </nav>
+
+    <div class="foot">
+      <b>Base:</b> PostgreSQL<br>
+      Cada acción muestra su<br>SQL en la consola inferior.
+    </div>
+  </aside>
+
+  <!-- ===================== CONTENIDO ===================== -->
+  <main class="main">
+
+    <!-- ---------- 1. CRUD ---------- -->
+    <section class="page active" id="page-crud">
+      <div class="eyebrow">Entregable 1 · Integridad y constraints</div>
+      <h2>Carta del restaurante</h2>
+      <p class="lead">Crea, edita y elimina platos. Las reglas de la base (<b>CHECK</b>, <b>UNIQUE</b>, <b>NOT NULL</b>) se validan en vivo: si rompes una, la base la rechaza y verás el motivo.</p>
+
+      <div class="callout">
+        Para la demo: intenta crear un plato con <b>precio negativo</b> (rompe CHECK) o con un nombre que ya existe, ej. “Lomo Saltado” (rompe UNIQUE).
+      </div>
+
+      <div class="card">
+        <h3 id="form-titulo">Nuevo plato <span class="pill">INSERT</span></h3>
+        <div id="crud-notice" class="notice"></div>
+        <div class="grid c3">
+          <div class="field"><label>Nombre</label><input id="p-nombre" placeholder="Ej. Tallarín Saltado"></div>
+          <div class="field"><label>Precio (S/)</label><input id="p-precio" type="number" step="0.01" placeholder="25.00"></div>
+          <div class="field"><label>Stock</label><input id="p-stock" type="number" value="20"></div>
+          <div class="field"><label>Categoría</label><select id="p-categoria"></select></div>
+          <div class="field"><label>¿Vegano? (JSONB)</label>
+            <select id="p-vegano"><option value="false">No</option><option value="true">Sí</option></select></div>
+          <div class="field"><label>Picante 0–3 (JSONB)</label><input id="p-picante" type="number" min="0" max="3" value="0"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="btn-guardar">Guardar plato</button>
+          <button class="btn ghost" id="btn-cancelar" style="display:none">Cancelar edición</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Platos en carta <span class="pill" id="crud-count">SELECT</span></h3>
+        <div class="table-wrap">
+          <table id="tabla-productos">
+            <thead><tr><th>#</th><th>Plato</th><th>Categoría</th><th class="right">Precio</th><th class="right">Stock</th><th>Atributos (JSONB)</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 2. VENTA / TRANSACCION ---------- -->
+    <section class="page" id="page-venta">
+      <div class="eyebrow">Entregable 1 y 2 · CRUD complejo + Transacción ACID</div>
+      <h2>Registrar una venta</h2>
+      <p class="lead">Crear un pedido toca <b>3 tablas</b> (pedidos, detalle_pedido, productos) dentro de una transacción <b>BEGIN … COMMIT</b>. Si un producto no tiene stock, se hace <b>ROLLBACK</b> y no se guarda nada.</p>
+
+      <div class="callout">
+        Para la demo: agrega un producto con cantidad enorme (ej. 99999) para forzar el <b>ROLLBACK</b> por stock insuficiente, y observa la consola SQL.
+      </div>
+
+      <div class="card">
+        <h3>Datos del pedido <span class="pill">BEGIN / COMMIT</span></h3>
+        <div id="venta-notice" class="notice"></div>
+        <div class="grid c3">
+          <div class="field"><label>Cliente</label><select id="v-cliente"></select></div>
+          <div class="field"><label>Mesa</label><select id="v-mesa"></select></div>
+          <div class="field"><label>Mesero</label><select id="v-empleado"></select></div>
+        </div>
+        <div class="grid c3" style="margin-top:13px; align-items:end">
+          <div class="field"><label>Producto</label><select id="v-prod"></select></div>
+          <div class="field"><label>Cantidad</label><input id="v-cant" type="number" value="1" min="1"></div>
+          <div class="field"><button class="btn ghost" id="btn-add-item">+ Agregar al pedido</button></div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:14px">
+          <table id="tabla-carrito">
+            <thead><tr><th>Producto</th><th class="right">Cant.</th><th class="right">P. Unit</th><th class="right">Subtotal</th><th></th></tr></thead>
+            <tbody></tbody>
+            <tfoot><tr><td colspan="3" class="right"><b>Total</b></td><td class="right mono"><b id="carrito-total">S/ 0.00</b></td><td></td></tr></tfoot>
+          </table>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="btn-registrar" disabled>Registrar venta (transacción)</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Últimos pedidos <span class="pill">JOIN</span></h3>
+        <div class="table-wrap">
+          <table id="tabla-pedidos">
+            <thead><tr><th>#</th><th>Cliente</th><th>Mesa</th><th>Mesero</th><th>Estado</th><th class="right">Total</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 3. REPORTE ---------- -->
+    <section class="page" id="page-reporte">
+      <div class="eyebrow">Entregable 1 · Reportes y exportación</div>
+      <h2>Ventas por categoría</h2>
+      <p class="lead">Consulta con <b>JOIN de 4 tablas</b> (pedidos, detalle_pedido, productos, categorías), <b>GROUP BY</b> y <b>HAVING</b>. El resultado se exporta a CSV, JSON o Excel.</p>
+
+      <div class="card">
+        <h3>Parámetros <span class="pill">GROUP BY / HAVING</span></h3>
+        <div class="grid c3" style="align-items:end">
+          <div class="field"><label>Mostrar categorías con ingresos mayores a (S/)</label><input id="r-min" type="number" value="20"></div>
+          <div class="field"><button class="btn primary" id="btn-reporte">Generar reporte</button></div>
+        </div>
+        <div class="btn-row" style="margin-top:14px">
+          <span style="font-size:13px;color:var(--ink-soft)">Exportar:</span>
+          <button class="btn ok sm" data-fmt="csv">⬇ CSV</button>
+          <button class="btn ok sm" data-fmt="excel">⬇ Excel</button>
+          <button class="btn ok sm" data-fmt="json">⬇ JSON</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Resultado</h3>
+        <div class="table-wrap">
+          <table id="tabla-reporte">
+            <thead><tr><th>Categoría</th><th class="right">N° Pedidos</th><th class="right">Unidades</th><th class="right">Ingresos</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 4. NOSQL ---------- -->
+    <section class="page" id="page-nosql">
+      <div class="eyebrow">Entregable 2 · Caso de uso NoSQL / Híbrido</div>
+      <h2>Módulo híbrido con JSONB</h2>
+      <p class="lead">Cada plato guarda atributos semi-estructurados (vegano, picante, alérgenos, ingredientes…) en una columna <b>JSONB</b> dentro de la tabla <b>productos</b>. Así no necesitamos decenas de columnas ni tablas extra para datos que varían de plato en plato.</p>
+
+      <div class="callout">
+        <b>Tabla afectada:</b> <span class="mono">productos</span> · columna <span class="mono">atributos JSONB</span> (con índice GIN).<br>
+        <b>¿Por qué JSONB aquí?</b> Los atributos de cada plato son distintos e impredecibles; en el modelo puramente relacional necesitaríamos muchas columnas vacías o una tabla EAV difícil de consultar. JSONB lo resuelve en un solo campo flexible y consultable.
+      </div>
+
+      <div class="card">
+        <h3>Buscar dentro del JSON <span class="pill">@&gt; operador</span></h3>
+        <div class="grid c3" style="align-items:end">
+          <div class="field"><label>Atributo</label>
+            <select id="nq-clave"><option value="vegano">vegano</option><option value="picante">picante</option><option value="gaseosa">gaseosa</option></select></div>
+          <div class="field"><label>Valor</label><input id="nq-valor" value="true"></div>
+          <div class="field"><button class="btn primary" id="btn-nosql">Buscar</button></div>
+        </div>
+        <div class="grid c2" style="margin-top:13px; align-items:end">
+          <div class="field"><label>…o buscar platos con un alérgeno</label>
+            <select id="nq-alerg"><option value="gluten">gluten</option><option value="lacteos">lácteos</option><option value="huevo">huevo</option></select></div>
+          <div class="field"><button class="btn ghost" id="btn-alerg">Buscar por alérgeno</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Resultado</h3>
+        <div class="table-wrap">
+          <table id="tabla-nosql">
+            <thead><tr><th>#</th><th>Plato</th><th class="right">Precio</th><th>Atributos</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 5. OPTIMIZACION ---------- -->
+    <section class="page" id="page-opt">
+      <div class="eyebrow">Entregable 2 · Optimización (índices)</div>
+      <h2>Índices y plan de ejecución</h2>
+      <p class="lead">Los índices aceleran las búsquedas frecuentes. Con <b>EXPLAIN ANALYZE</b> se ve el plan que PostgreSQL usa y cuánto tarda.</p>
+
+      <div class="card">
+        <h3>Índices creados <span class="pill">pg_indexes</span></h3>
+        <div class="btn-row" style="margin-bottom:14px">
+          <button class="btn ghost sm" id="btn-indices">Listar índices</button>
+          <button class="btn ghost sm" id="btn-explain">Correr EXPLAIN ANALYZE del reporte</button>
+        </div>
+        <div class="table-wrap" id="indices-wrap" style="display:none">
+          <table id="tabla-indices">
+            <thead><tr><th>Tabla</th><th>Índice</th><th>Definición</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="explain-out" class="explain-box" style="display:none; margin-top:14px"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===================== CONSOLA SQL (firma) ===================== -->
+<div class="sqlbar" id="sqlbar">
+  <div class="hd" id="sqlbar-hd">
+    <span class="dot"></span>
+    <b>Consola SQL</b>
+    <span class="ctx" id="sql-ctx">en espera</span>
+    <span class="toggle" id="sql-toggle">▾ ocultar</span>
+  </div>
+  <div class="body">
+    <pre id="sql-out" class="empty">— Realiza una acción y aquí aparecerá la consulta SQL exacta que se ejecutó.</pre>
+    <div class="params" id="sql-params"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
